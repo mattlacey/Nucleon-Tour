@@ -114,7 +114,7 @@ void render()
 		}
 
 		// need to map z to our road texture
-		yy = (CAM_HEIGHT -z) / 55;
+	// 	yy = (CAM_HEIGHT -z) / 55;
 
 		z -= dz; 
 
