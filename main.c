@@ -19,10 +19,8 @@
 #define KEY_COUNT (323)
 #define X_RES (800)
 #define Y_RES (600)
+#define Y_RES_2 (Y_RES >> 1)
 #define CAM_HEIGHT (16384)
-
-// CAM_HEIGHT / 300, then rounded up to the nearest power of 2, then taking log
-#define Z_SCALE (6)
 
 SDL_Surface * screen = NULL;
 SDL_Surface * road = NULL;
@@ -64,8 +62,8 @@ int init()
 		for(x = 0; x < (X_RES >> 1) - dx; x++)
 		{
 
-			*((Uint32 *)road->pixels + y * X_RES + x) = 0xFF00FF8F;
-			*((Uint32 *)road->pixels + (y + 1) * X_RES - x) = 0xFF00FF8F;
+			*((Uint32 *)road->pixels + y * X_RES + x) = 0xFFFF8F00;
+			*((Uint32 *)road->pixels + (y + 1) * X_RES - x) = 0xFFFF8F00;
 		}
 
 		for(x = (X_RES >> 1) - dx; x < (X_RES >> 1) + 1 + dx; x++)
@@ -86,53 +84,77 @@ void render()
 	Uint32 * src, * dst;
 	int i, x, y, yy;
 	int xOff, dxOff;
-	static int dz = 0; 
+	static int z = 0; 
 
 	SDL_LockSurface(screen);
 
-	dz++;
+	z++;
 
 	xOff = 0;
 	dxOff = 0;
 
-	yy = Y_RES - 1;
+	yy = 0;
 
-	for(y = Y_RES - 1; y >  Y_RES >> 1; y--)
+	for(y = Y_RES - 1; y >  1; y--)
 	{
-		int dx = y - (Y_RES >> 1);
+		int dx = y - Y_RES_2;
 		int mod = 0;
 
-		// camera is 32 units above the road
-		int z = -CAM_HEIGHT / (y - ((Y_RES >> 1) - 1));
+		int zScr = (y == Y_RES >> 1) ? 0 : CAM_HEIGHT / (y - (Y_RES >> 1));
 
-		yy -= 2;
+		// road map should really only map to half the screen
+		yy += 2;
 
-		if(y >> 9)
-		{
-			xOff ++;
-			dxOff += xOff;
-		}
-
-		// need to map z to our road texture
-	// 	yy = (CAM_HEIGHT -z) / 55;
-
-		z -= dz; 
-
-		// stripes are 64 z-units wide, keep dz wrapping
-		if(z & 0x40)
-		{
-			mod = 0x00002222;
-		}
-		
-		dz &= 0x7F;
-
-		src = (Uint32 *)road->pixels + yy * X_RES;
 		dst = (Uint32 *)screen->pixels + y * X_RES;
 
-		// copy the line we want 
-		for(x = 0; x < X_RES; x++)
+		// stops us going all the way to the horizon
+		if(zScr < (CAM_HEIGHT >> 2) && zScr > 0)
 		{
-			*(dst + x) = *(src  + x) - mod;
+			// printf("yy = %i, z = %i\n", yy, z);
+			
+			// stripes are 64 z-units wide
+			zScr += z;
+
+			if(zScr & 0x10)
+			{
+				mod = 0x00222200;
+			}
+
+			// track is straight, left, straight, right
+			if(z & 0x800)
+			{
+				z = 0;
+			}		
+
+			if(zScr & 0x400 && zScr & 0x200)
+			{
+				xOff--;
+			}
+			else if(zScr & 0x200)
+			{
+				xOff++;
+			}
+	
+			// scale down xOff before using it, we do the same with dxOff later	
+			dxOff += (xOff >> 4);
+
+			src = (Uint32 *)road->pixels + (Y_RES - yy) * X_RES;
+
+			// copy the line we want 
+			// right now this is going to wrap around, but we'll clamp and fix things later
+			for(x = 0; x < X_RES; x++)
+			{
+				*(dst + x) = *(src  + x + (dxOff >> 3)) - mod;
+			}
+		}
+		else
+		{
+			// BRRRRUE BRRUE SKYYYYY
+			// Not needed every frame, but hey - easy optimisation later!
+			for(x = 0; x < X_RES; x++)
+			{
+				*(dst + x) = 0xFF999955;
+			}	
 		}
 	}
 
@@ -170,7 +192,7 @@ void loop()
 			}
 		}
 
-		// if(keys[SDLK_SPACE])
+		//if(keys[SDLK_SPACE])
 		{
 			render();
 		}
