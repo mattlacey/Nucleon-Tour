@@ -113,7 +113,7 @@ void render()
 			// printf("yy = %i, z = %i\n", yy, z);
 			
 			// stripes are 64 z-units wide
-			zScr += z;
+			zScr += (z >> 1);
 
 			if(zScr & 0x10)
 			{
@@ -121,7 +121,7 @@ void render()
 			}
 
 			// track is straight, left, straight, right
-			if(z & 0x800)
+			if(z & 0x1000)
 			{
 				z = 0;
 			}		
@@ -130,9 +130,13 @@ void render()
 			{
 				xOff--;
 			}
-			else if(zScr & 0x200)
+			else if(zScr & 0x400)
 			{
 				xOff++;
+			}
+			else if(zScr & 0x200)
+			{
+				xOff--;
 			}
 	
 			// scale down xOff before using it, we do the same with dxOff later	
