@@ -111,14 +111,14 @@ void render()
 
 	SDL_LockSurface(screen);
 
-	z += 4;
+	z += 1;
 
 	if(z & Z_MAX) 
 	{
 		z = 0;
 	}
 
-	printf("z = %i\n", z);
+	// printf("z = %i\n", z);
 
 	xOff = 0;
 	dxOff = 0;
@@ -142,6 +142,7 @@ void render()
 		// stops us going all the way to the horizon
 		if(zScr < (CAM_HEIGHT >> 2) && zScr > 0)
 		{
+			int xOffChange = 0;
 			// printf("yy = %i, z = %i\n", yy, z);
 			
 			zScr += z;
@@ -159,19 +160,17 @@ void render()
 
 			if(zScr & 0x400 && zScr & 0x200)
 			{
-				xOff--;
+				xOffChange = -1;
 			}
 			else if(zScr & 0x400)
 			{
-				xOff++;
+				xOffChange = 1;
 			}
 			else if(zScr & 0x200)
 			{
-				xOff--;
+				xOffChange = -1;
 			}
 
-			// scale down xOff before using it, we do the same with dxOff later	
-			dxOff += (xOff >> 4);
 
 			// we only want to draw if the next line as above the last drawn line
 			h = heightMap[zScr];
@@ -185,8 +184,13 @@ void render()
 
 			src = (Uint32 *)road->pixels + (Y_RES - yy) * X_RES;
 
+			// scale down xOff before using it, we do the same with dxOff later	
+			xOff += xOffChange;
+
 			for(; h >= 0; h--)
 			{
+				dxOff += (xOff >> 4);
+
 				// copy the line we want 
 				// right now this is going to wrap around, but we'll clamp and fix things later
 
