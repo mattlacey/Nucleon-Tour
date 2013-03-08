@@ -65,8 +65,8 @@ int init()
 		for(x = 0; x < (X_RES >> 1) - dx; x++)
 		{
 
-			*((Uint32 *)road->pixels + y * X_RES + x) = 0xFFFF8F00;
-			*((Uint32 *)road->pixels + (y + 1) * X_RES - x) = 0xFFFF8F00;
+			*((Uint32 *)road->pixels + y * X_RES + x) = 0xFF00FF8F;
+			*((Uint32 *)road->pixels + (y + 1) * X_RES - x) = 0xFF00FF8F;
 		}
 
 		for(x = (X_RES >> 1) - dx; x < (X_RES >> 1) + 1 + dx; x++)
@@ -154,7 +154,7 @@ void render()
 			// do stripes
 			if(zScr & 0x20)
 			{
-				mod = 0x00222200;
+				mod = 0x00222222;
 			}
 
 			if(zScr & 0x400 && zScr & 0x200)
@@ -205,7 +205,7 @@ void render()
 			// Not needed every frame, but hey - easy optimisation later!
 			for(x = 0; x < X_RES; x++)
 			{
-				*(dst + x) = 0xFF999955;
+				*(dst + x) = 0xFF8888FF;
 			}
 			
 			yDraw--;
