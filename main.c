@@ -187,9 +187,9 @@ void render()
 			// scale down xOff before using it, we do the same with dxOff later	
 			xOff += xOffChange;
 
-			for(; h >= 0; h--)
+			for(i = 0; i <= h; i++)
 			{
-				dxOff += (xOff >> 4);
+				dxOff += (xOff >> 5);
 
 				// copy the line we want 
 				// right now this is going to wrap around, but we'll clamp and fix things later
@@ -197,7 +197,7 @@ void render()
 				//printf("yDraw = %i, h = %i, hBase = %i, zScr = %i\n", yDraw, h, hBase, zScr);
 				for(x = 0; x < X_RES; x++)
 				{
-					*(dst - (X_RES * h) + x) = *(src  + x + (dxOff >> 4)) - mod;
+					*(dst - (X_RES * i) + x) = *(src  + x - (dxOff >> 4)) - mod;
 				}
 
 				yDraw--;
