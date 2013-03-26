@@ -81,7 +81,7 @@ int init()
 
 	for(i = 0; i < Z_MAX >> 2; i++)
 	{
-		heightMap[(Z_MAX - 1) - i] = heightMap[i] = dy >> 8;
+		heightMap[(Z_MAX - 1) - i] = heightMap[i] = dy >> 9;
 		y++;
 		dy += y >> 4;
 	}
@@ -164,13 +164,12 @@ void render()
 			}
 			else if(zScr & 0x400)
 			{
-				xOffChange = 1;
+				xOffChange = 2;
 			}
 			else if(zScr & 0x200)
 			{
 				xOffChange = -1;
 			}
-
 
 			// we only want to draw if the next line as above the last drawn line
 			h = heightMap[zScr];
@@ -184,20 +183,20 @@ void render()
 
 			src = (Uint32 *)road->pixels + (Y_RES - yy) * X_RES;
 
-			// scale down xOff before using it, we do the same with dxOff later	
-			xOff += xOffChange;
 
 			for(i = 0; i <= h; i++)
 			{
-				dxOff += (xOff >> 5);
+				//printf("yDraw = %i, h = %i, hBase = %i, zScr = %i\n", yDraw, h, hBase, zScr);
+				// scale down xOff before using it, we do the same with dxOff later	
+				xOff += xOffChange;
+				dxOff += xOff >> 4;
 
 				// copy the line we want 
-				// right now this is going to wrap around, but we'll clamp and fix things later
-
-				//printf("yDraw = %i, h = %i, hBase = %i, zScr = %i\n", yDraw, h, hBase, zScr);
 				for(x = 0; x < X_RES; x++)
 				{
-					*(dst - (X_RES * i) + x) = *(src  + x - (dxOff >> 4)) - mod;
+					int xSrc = x - (dxOff >> 3);
+					xSrc = (xSrc < 0 ? 0 : (xSrc >= X_RES ? X_RES - 1 : xSrc));
+					*(dst - (X_RES * i) + x) = *(src  + xSrc) - mod;
 				}
 
 				yDraw--;
