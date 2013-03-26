@@ -111,7 +111,7 @@ void render()
 
 	SDL_LockSurface(screen);
 
-	z += 1;
+	z += 2;
 
 	if(z & Z_MAX) 
 	{
@@ -140,7 +140,7 @@ void render()
 		dst = (Uint32 *)screen->pixels + yDraw * X_RES;
 
 		// stops us going all the way to the horizon
-		if(zScr < (CAM_HEIGHT >> 2) && zScr > 0)
+		if(zScr < (CAM_HEIGHT >> 4) && zScr > 0)
 		{
 			int xOffChange = 0;
 			// printf("yy = %i, z = %i\n", yy, z);
@@ -153,7 +153,7 @@ void render()
 			zScr &= Z_MAX - 1;
 
 			// do stripes
-			if(zScr & 0x20)
+			if(zScr & 0x40)
 			{
 				mod = 0x00222222;
 			}
