@@ -164,11 +164,11 @@ void render()
 
 			if(zScr & 0x400 && zScr & 0x200)
 			{
-				xOffChange = -1;
+				xOffChange = 1;
 			}
 			else if(zScr & 0x400)
 			{
-				xOffChange = 1;
+				xOffChange = 0;
 			}
 			else if(zScr & 0x200)
 			{
@@ -208,6 +208,9 @@ void render()
 				{
 					int xSrc = x - (dxOff >> 3);
 					xSrc += steering;
+
+					// Half this as we want the road to be wider on screen than it is in the source
+					xSrc = (X_RES >> 1) + xSrc >> 1;
 					xSrc = (xSrc < 0 ? 0 : (xSrc >= X_RES ? X_RES - 1 : xSrc));
 					*(dst - (X_RES * i) + x) = *(src  + xSrc) - mod;
 				}
@@ -221,7 +224,7 @@ void render()
 			// Not needed every frame, but hey - easy optimisation later!
 			for(x = 0; x < X_RES; x++)
 			{
-				*(dst + x) = 0xFF8888FF;
+				*(dst + x) = 0xFF4444FF;
 			}
 			
 			yDraw--;
@@ -279,12 +282,12 @@ void loop()
 
 		if(keys[SDLK_LEFT] && speed > 16)
 		{
-			steering -= 8;
+			steering -= (speed >> 4);
 		}
 		
 		if(keys[SDLK_RIGHT] & speed > 16)
 		{
-			steering += 8;
+			steering += (speed >> 4);
 		}
 
 		if(keys[SDLK_UP])
