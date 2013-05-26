@@ -23,11 +23,16 @@
 #define Z_MAX (0x1000)
 #define CAM_HEIGHT (16384)
 
+#define CLAMP(X,MIN,MAX) (X) < (MIN) ? (MIN) : ((X) > (MAX) ? (MAX) : (X))
+
 SDL_Surface * screen = NULL;
 SDL_Surface * road = NULL;
 
 int keys[KEY_COUNT];
 int heightMap[Z_MAX];
+
+int steering = 0;
+int speed = 0;
 
 int init()
 {
@@ -64,7 +69,6 @@ int init()
 
 		for(x = 0; x < (X_RES >> 1) - dx; x++)
 		{
-
 			*((Uint32 *)road->pixels + y * X_RES + x) = 0xFF00FF8F;
 			*((Uint32 *)road->pixels + (y + 1) * X_RES - x) = 0xFF00FF8F;
 		}
@@ -111,7 +115,7 @@ void render()
 
 	SDL_LockSurface(screen);
 
-	z += 2;
+	z += (speed >> 4);
 
 	if(z & Z_MAX) 
 	{
@@ -153,7 +157,7 @@ void render()
 			zScr &= Z_MAX - 1;
 
 			// do stripes
-			if(zScr & 0x40)
+			if(zScr & 0x20)
 			{
 				mod = 0x00222222;
 			}
@@ -164,11 +168,19 @@ void render()
 			}
 			else if(zScr & 0x400)
 			{
-				xOffChange = 2;
+				xOffChange = 1;
 			}
 			else if(zScr & 0x200)
 			{
 				xOffChange = -1;
+			}
+	
+			// This should be the player's z value, but using y for now since we're not changing
+			// the car's height just yet
+			// Make the player drive 'straight on' on the bends
+			if(y == Y_RES - 20)
+			{
+				steering -= xOffChange * (speed >> 4);
 			}
 
 			// we only want to draw if the next line as above the last drawn line
@@ -195,6 +207,7 @@ void render()
 				for(x = 0; x < X_RES; x++)
 				{
 					int xSrc = x - (dxOff >> 3);
+					xSrc += steering;
 					xSrc = (xSrc < 0 ? 0 : (xSrc >= X_RES ? X_RES - 1 : xSrc));
 					*(dst - (X_RES * i) + x) = *(src  + xSrc) - mod;
 				}
@@ -215,6 +228,18 @@ void render()
 		}
 	}
 
+	// Draw a car! Thing
+	// Need to adjust this for height...
+	for(y = Y_RES - 20; y > Y_RES - 80; y--)
+	{
+		dst = (Uint32 *)screen->pixels + y * X_RES;
+	
+		for(x = (X_RES >> 1) - 80; x < (X_RES >> 1) + 80; x++)
+		{
+			*(dst + x) = 0xFFFF4040;
+		}
+	}
+
 	SDL_UnlockSurface(screen);
 	SDL_UpdateRect(screen, 0, 0, X_RES, Y_RES);
 }
@@ -223,6 +248,8 @@ void loop()
 {
 	int loop = 1;
 	SDL_Event ev;
+
+	printf("Y_RES - 20: %i, Y_RES - 40: %i", Y_RES - 20, Y_RES - 40);
 
 	while(loop)
 	{
@@ -247,7 +274,30 @@ void loop()
 			{
 				loop = 0;
 			}
+
 		}
+
+		if(keys[SDLK_LEFT] && speed > 16)
+		{
+			steering -= 8;
+		}
+		
+		if(keys[SDLK_RIGHT] & speed > 16)
+		{
+			steering += 8;
+		}
+
+		if(keys[SDLK_UP])
+		{
+			speed ++;	
+		}
+
+		if(keys[SDLK_DOWN])
+		{
+			speed --;
+		}
+
+		speed = CLAMP(speed, 0, 128);
 
 		//if(keys[SDLK_SPACE])
 		{
