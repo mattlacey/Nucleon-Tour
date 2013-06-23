@@ -25,6 +25,10 @@
 
 #define CLAMP(X,MIN,MAX) (X) < (MIN) ? (MIN) : ((X) > (MAX) ? (MAX) : (X))
 
+#define FX_S (12)
+#define FX_1 (1 << FX_S)
+#define FX_M (FX_1 - 1)
+
 SDL_Surface * screen = NULL;
 SDL_Surface * road = NULL;
 
@@ -115,9 +119,9 @@ void render()
 
 	SDL_LockSurface(screen);
 
-	z += (speed >> 4);
+	z += speed;
 
-	if(z & Z_MAX) 
+	if(z & Z_MAX << FX_S) 
 	{
 		z = 0;
 	}
@@ -149,13 +153,13 @@ void render()
 			int xOffChange = 0;
 			// printf("yy = %i, z = %i\n", yy, z);
 			
-			zScr += z;
+			zScr += z >> FX_S;
 
 			// track is straight, left, straight, right
 		
 			// this needs to wrap for the height map 
 			zScr &= Z_MAX - 1;
-
+	
 			// do stripes
 			if(zScr & 0x20)
 			{
@@ -164,7 +168,7 @@ void render()
 
 			if(zScr & 0x400 && zScr & 0x200)
 			{
-				xOffChange = 1;
+				xOffChange = FX_1 >> 7;
 			}
 			else if(zScr & 0x400)
 			{
@@ -172,7 +176,7 @@ void render()
 			}
 			else if(zScr & 0x200)
 			{
-				xOffChange = -1;
+				xOffChange = -FX_1 >> 7;
 			}
 	
 			// This should be the player's z value, but using y for now since we're not changing
@@ -180,7 +184,7 @@ void render()
 			// Make the player drive 'straight on' on the bends
 			if(y == Y_RES - 20)
 			{
-				steering -= xOffChange * (speed >> 4);
+				steering -= (xOffChange * speed) >> FX_S;
 			}
 
 			// we only want to draw if the next line as above the last drawn line
@@ -201,13 +205,13 @@ void render()
 				//printf("yDraw = %i, h = %i, hBase = %i, zScr = %i\n", yDraw, h, hBase, zScr);
 				// scale down xOff before using it, we do the same with dxOff later	
 				xOff += xOffChange;
-				dxOff += xOff >> 4;
+				dxOff += xOff;
 
 				// copy the line we want 
 				for(x = 0; x < X_RES; x++)
 				{
-					int xSrc = x - (dxOff >> 3);
-					xSrc += steering;
+					int xSrc = x - (dxOff >> FX_S);
+					xSrc += steering >> FX_S;
 
 					// Half this as we want the road to be wider on screen than it is in the source
 					xSrc = (X_RES >> 1) + xSrc >> 1;
@@ -280,27 +284,27 @@ void loop()
 
 		}
 
-		if(keys[SDLK_LEFT] && speed > 16)
+		if(keys[SDLK_LEFT] && speed > 0)
 		{
-			steering -= (speed >> 4);
+			steering -= FX_1;
 		}
 		
-		if(keys[SDLK_RIGHT] & speed > 16)
+		if(keys[SDLK_RIGHT] && speed > 0)
 		{
-			steering += (speed >> 4);
+			steering += FX_1;
 		}
 
 		if(keys[SDLK_UP])
 		{
-			speed ++;	
+			speed += (FX_1 >> 6);
 		}
 
 		if(keys[SDLK_DOWN])
 		{
-			speed --;
+			speed -= (FX_1 >> 6);
 		}
 
-		speed = CLAMP(speed, 0, 128);
+		speed = CLAMP(speed, 0, FX_1 * 16);
 
 		//if(keys[SDLK_SPACE])
 		{
